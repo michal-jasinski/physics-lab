@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Laboratorium bryły sztywnej</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* Układ: pasek tematów, pod nim jedno stanowisko: płótna po lewej, suwaki i odczyty po prawej, pytania do klasy na dole.
+   Każda wielkość fizyczna ma stały kolor (siła, moment siły, bezwładność, prędkość kątowa, energia, moment pędu) i ten sam kolor wraca we wzorach, suwakach i rysunkach. */
+:root{
+  --bg:#EDF1F5; --surface:#FFFFFF; --sunk:#E3E9EF; --ink:#12202E; --muted:#566879; --line:#CDD6DF; --accent:#0E6E8E;
+  --c-force:#CC4A0A; --c-torque:#6A3FD6; --c-inertia:#2F5FCF; --c-omega:#0A7C90; --c-energy:#B07000; --c-L:#2B8A3E;
+  --f-display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-math:"STIX Two Text","Times New Roman",Cambria,serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1620; --surface:#16212C; --sunk:#1F2C39; --ink:#E8EEF4; --muted:#9AAABB; --line:#2C3A49; --accent:#52B8D8;
+  --c-force:#FF8C5C; --c-torque:#A98FFF; --c-inertia:#7FA2FF; --c-omega:#4FD1E8; --c-energy:#F2B84B; --c-L:#6FD88A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1620; --surface:#16212C; --sunk:#1F2C39; --ink:#E8EEF4; --muted:#9AAABB; --line:#2C3A49; --accent:#52B8D8;
+  --c-force:#FF8C5C; --c-torque:#A98FFF; --c-inertia:#7FA2FF; --c-omega:#4FD1E8; --c-energy:#F2B84B; --c-L:#6FD88A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-inline:clamp(16px,4vw,40px);padding-block:28px 56px}
+.wrap{max-width:1180px;margin-inline:auto;display:grid;gap:22px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4.4vw,40px);line-height:1.1;font-weight:700}
+h2{font-size:clamp(22px,3vw,28px);line-height:1.15;font-weight:700}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.top{display:grid;gap:8px}
+.top .lead{color:var(--muted);max-width:68ch}
+.math,var{font-family:var(--f-math)}
+var{font-style:italic}
+sub{font-size:.72em;line-height:0}
+.vF{color:var(--c-force)} .vT{color:var(--c-torque)} .vI{color:var(--c-inertia)}
+.vW{color:var(--c-omega)} .vE{color:var(--c-energy)} .vL{color:var(--c-L)}
+
+.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.tabs button{font:inherit;color:var(--ink);background:var(--sunk);border:1px solid transparent;border-radius:10px;
+  padding:10px 12px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer;min-height:48px;font-weight:500}
+.tabs button:hover{border-color:var(--line)}
+.tabs button[aria-selected="true"]{background:var(--surface);border-color:var(--accent);box-shadow:0 1px 0 var(--accent)}
+.tsym{font-size:24px;line-height:1;min-width:30px;text-align:center;font-style:italic;font-weight:600}
+.tabs button:focus-visible,.btn:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.mod[hidden]{display:none}
+.mod{display:grid;gap:18px}
+.mhead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 28px;align-items:center}
+.mhead p{color:var(--muted);max-width:60ch;margin-top:6px}
+.formula{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 20px;font-size:clamp(20px,2.6vw,27px);
+  line-height:1.5;display:grid;gap:2px;min-width:0}
+.formula small{font-size:.62em;color:var(--muted);font-family:var(--f-body)}
+@media (max-width:860px){.mhead{grid-template-columns:minmax(0,1fr)}}
+
+.stage{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.stage{grid-template-columns:minmax(0,1fr)}}
+.views{display:grid;gap:12px;min-width:0}
+.view{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.view canvas{display:block;width:100%;height:auto}
+.vlabel{display:block;padding:10px 14px 0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:16px;min-width:0}
+@media (min-width:861px){.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+.controls{display:grid;gap:14px}
+.grp{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;border-top:1px solid var(--line);padding-top:12px}
+.grp:first-child{border-top:0;padding-top:0}
+.ctl{display:grid;gap:4px}
+.ctl label{display:flex;align-items:baseline;gap:8px}
+.ctl .sym{font-size:20px;min-width:26px;font-style:italic}
+.ctl .nm{flex:1;min-width:0;font-weight:500}
+.ctl output{font-family:var(--f-mono);font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl input[type=range]{width:100%;margin:0;min-height:30px;accent-color:var(--accent);cursor:pointer}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:inherit;font-weight:500;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn[aria-pressed="true"]{background:var(--sunk);border-color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg .btn{padding:6px 12px;min-height:36px}
+.chk{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:32px}
+.chk input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+
+.calc{white-space:pre-wrap;font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere;line-height:1.6;font-variant-numeric:tabular-nums}
+.ros{display:grid;gap:0}
+.ro{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);align-items:baseline}
+.ro:first-child{border-top:0}
+.ro .k{color:var(--muted);font-size:13.5px;min-width:0}
+.ro .v{font-family:var(--f-mono);font-weight:600;font-size:14px;text-align:right;font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.tbl table{border-collapse:collapse;width:100%;min-width:520px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:9px 12px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{border-top:0;font-size:13px;color:var(--muted);font-weight:600}
+.tbl td{font-family:var(--f-mono);font-size:13.5px}
+.tbl td:first-child{font-family:var(--f-body);font-weight:500}
+.split{display:inline-flex;width:110px;height:10px;border-radius:5px;overflow:hidden;background:var(--sunk);vertical-align:middle;margin-left:8px}
+.split i{display:block;height:100%}
+.analog{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+.analog div{background:var(--surface);padding:8px 10px;text-align:center;font-family:var(--f-math);font-size:18px}
+.analog .h{font-family:var(--f-body);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--sunk)}
+@media (max-width:520px){.analog{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.think{display:grid;gap:10px}
+.think .hint{color:var(--muted);margin-top:-6px}
+.think details{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 14px}
+.think summary{cursor:pointer;padding:12px 0;font-weight:500;list-style-position:outside}
+.think details[open] summary{border-bottom:1px solid var(--line)}
+.think details p{padding:10px 0 14px;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <h1>Laboratorium bryły sztywnej</h1>
+    <p class="lead">Powtórka przed sprawdzianem. Zmieniaj parametry suwakami i obserwuj, co dzieje się z wynikami. Przy każdym temacie zapytaj klasę o przewidywany wynik, zanim ruszysz suwak.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Tematy powtórki">
+    <button role="tab" id="t-moment-sily" data-m="moment-sily"><span class="tsym vT">M</span><span>Moment siły</span></button>
+    <button role="tab" id="t-moment-bezwladnosci" data-m="moment-bezwladnosci"><span class="tsym vI">I</span><span>Moment bezwładności</span></button>
+    <button role="tab" id="t-druga-zasada" data-m="druga-zasada"><span class="tsym vW">ε</span><span>II zasada dynamiki</span></button>
+    <button role="tab" id="t-energia-kinetyczna" data-m="energia-kinetyczna"><span class="tsym vE">E<sub>k</sub></span><span>Energia kinetyczna</span></button>
+    <button role="tab" id="t-moment-pedu" data-m="moment-pedu"><span class="tsym vL">L</span><span>Moment pędu</span></button>
+  </nav>
+
+  <!-- 1. Moment siły -->
+  <section id="moment-sily" class="mod" role="tabpanel" aria-labelledby="t-moment-sily" hidden>
+    <div class="mhead">
+      <div><h2>Moment siły</h2><p>Siła obraca bryłę tym skuteczniej, im dalej od osi jest przyłożona i im większa jest jej składowa prostopadła do r. Składowa wzdłuż r niczego nie obraca.</p></div>
+      <div class="formula"><span><var class="vT">M</var> = <var>r</var> · <var class="vF">F</var><sub>⊥</sub></span><span><var class="vF">F</var><sub>⊥</sub> = <var class="vF">F</var> · sin <var>α</var></span><small>r to odległość punktu przyłożenia siły od osi. Wektorowo: M = r × F</small></div>
+    </div>
+    <div class="stage"><div class="views"></div><aside class="panel"><div class="controls"></div><div class="readouts"></div></aside></div>
+    <div class="think">
+      <h3>Przewidź, a potem sprawdź</h3>
+      <details><summary>Ustaw α = 0°. Ile wynosi moment siły i dlaczego?</summary><p>Zero, bo F⊥ = F·sin 0° = 0. Siła działa wzdłuż dźwigni i nie ma składowej prostopadłej do r, więc tylko rozciąga lub ściska dźwignię, nie obraca jej.</p></details>
+      <details><summary>Co się stanie z momentem, gdy podwoisz r, a siła pozostanie prostopadła i taka sama?</summary><p>Moment też się podwoi, bo M jest proporcjonalny do r. Dlatego klucz z długą rączką łatwiej odkręca zapieczoną śrubę.</p></details>
+      <details><summary>Kiedy dźwignia jest w równowadze? Sprawdź przyciskiem „Huśtawka”.</summary><p>Gdy suma momentów sił względem osi wynosi zero: M<sub>wyp</sub> = 0. Dla dwóch sił prostopadłych po przeciwnych stronach osi oznacza to F₁·r₁ = F₂·r₂. Cięższa osoba siada bliżej osi.</p></details>
+    </div>
+  </section>
+
+  <!-- 2. Moment bezwładności -->
+  <section id="moment-bezwladnosci" class="mod" role="tabpanel" aria-labelledby="t-moment-bezwladnosci" hidden>
+    <div class="mhead">
+      <div><h2>Moment bezwładności</h2><p>Miara oporu bryły wobec zmiany jej ruchu obrotowego. Zależy od masy i od tego, jak daleko od osi jest ona rozłożona.</p></div>
+      <div class="formula"><span><var class="vI">I</var> = Σ <var>m</var><sub>i</sub><var>r</var><sub>i</sub>² = <var>k</var> · <var>m</var> · <var>R</var>²</span><small>Steiner: I = I<sub>śr</sub> + m d², gdzie d to odległość osi od środka masy</small></div>
+    </div>
+    <div class="stage"><div class="views"></div><aside class="panel"><div class="controls"></div><div class="readouts"></div></aside></div>
+    <div class="think">
+      <h3>Przewidź, a potem sprawdź</h3>
+      <details><summary>Obręcz i tarcza mają taką samą masę i promień. Która ma większy moment bezwładności?</summary><p>Obręcz: k = 1, a dla tarczy k = ½. W obręczy cała masa jest na brzegu, czyli jak najdalej od osi.</p></details>
+      <details><summary>Jak zmieni się I tarczy, gdy podwoisz promień przy tej samej masie?</summary><p>Wzrośnie czterokrotnie, bo I jest proporcjonalne do R².</p></details>
+      <details><summary>Pręt: ile razy większy jest I względem osi przez koniec niż przez środek?</summary><p>Cztery razy. Przez środek I = (1/12) m L², przez koniec I = (1/3) m L². Ustaw d = R i sprawdź ze wzorem Steinera.</p></details>
+    </div>
+  </section>
+
+  <!-- 3. II zasada dynamiki -->
+  <section id="druga-zasada" class="mod" role="tabpanel" aria-labelledby="t-druga-zasada" hidden>
+    <div class="mhead">
+      <div><h2>II zasada dynamiki ruchu obrotowego</h2><p>Wypadkowy moment siły nadaje bryle przyspieszenie kątowe. Im większy moment bezwładności, tym trudniej bryłę rozkręcić.</p></div>
+      <div class="formula"><span><var class="vT">M</var><sub>wyp</sub> = <var class="vI">I</var> · <var class="vW">ε</var></span><small>ω = ε t, φ = ½ ε t² (przy ε = const, start ze spoczynku)</small></div>
+    </div>
+    <div class="stage"><div class="views"></div><aside class="panel"><div class="controls"></div><div class="readouts"></div></aside></div>
+    <div class="analog" aria-label="Analogie ruchu postępowego i obrotowego">
+      <div class="h">Postępowy</div><div>F</div><div>m</div><div>a</div><div>v</div>
+      <div class="h">Obrotowy</div><div class="vT">M</div><div class="vI">I</div><div class="vW">ε</div><div class="vW">ω</div>
+    </div>
+    <div class="think">
+      <h3>Przewidź, a potem sprawdź</h3>
+      <details><summary>Podwajasz moment siły. Co z ε? A gdy podwoisz I?</summary><p>Przy podwojonym M przyspieszenie kątowe rośnie dwa razy. Przy podwojonym I maleje dwa razy.</p></details>
+      <details><summary>Wyłączasz moment napędowy, a tarcie jest zerowe. Co dzieje się z ω?</summary><p>Zostaje stałe, bo M<sub>wyp</sub> = 0, więc ε = 0. To odpowiednik I zasady dynamiki: bryła obraca się ruchem jednostajnym.</p></details>
+      <details><summary>Dlaczego koło nie rusza, gdy moment tarcia jest większy od momentu napędowego?</summary><p>Moment tarcia równoważy moment napędowy i M<sub>wyp</sub> = 0. Koło ruszy dopiero wtedy, gdy M jest większe od momentu tarcia.</p></details>
+    </div>
+  </section>
+
+  <!-- 4. Energia kinetyczna -->
+  <section id="energia-kinetyczna" class="mod" role="tabpanel" aria-labelledby="t-energia-kinetyczna" hidden>
+    <div class="mhead">
+      <div><h2>Energia kinetyczna ruchu obrotowego</h2><p>Zależy od momentu bezwładności i od kwadratu prędkości kątowej. Przy toczeniu energia dzieli się na postępową i obrotową.</p></div>
+      <div class="formula"><span><var class="vE">E</var><sub>k</sub> = ½ <var class="vI">I</var> <var class="vW">ω</var>²</span><small>Praca momentu siły: W = M φ = ΔE<sub>k</sub>. Toczenie: E<sub>k</sub> = ½mv² + ½Iω²</small></div>
+    </div>
+    <div class="stage"><div class="views"></div><aside class="panel"><div class="controls"></div><div class="readouts"></div></aside></div>
+    <div class="tbl" id="race-table"></div>
+    <div class="think">
+      <h3>Przewidź, a potem sprawdź</h3>
+      <details><summary>Podwajasz prędkość kątową koła zamachowego. Ile razy wzrośnie E<sub>k</sub>?</summary><p>Cztery razy, bo energia zależy od ω².</p></details>
+      <details><summary>Obręcz, walec, kula i klocek bez tarcia zjeżdżają z równi. Kolejność? Czy masa ma znaczenie?</summary><p>Pierwszy jest klocek (k = 0), potem kula (2/5), walec (1/2) i obręcz (1). Masa i promień nie mają wpływu, bo skracają się w równaniu mgh = ½mv²(1 + k).</p></details>
+      <details><summary>Wszystkie ciała tracą tę samą energię potencjalną. Dlaczego obręcz jest najwolniejsza?</summary><p>Część energii idzie na obrót. Obręcz ma największe k, więc największy ułamek mgh zamienia się w energię obrotową i zostaje jej mniej na prędkość środka masy.</p></details>
+    </div>
+  </section>
+
+  <!-- 5. Moment pędu -->
+  <section id="moment-pedu" class="mod" role="tabpanel" aria-labelledby="t-moment-pedu" hidden>
+    <div class="mhead">
+      <div><h2>Moment pędu i jego zachowanie</h2><p>Gdy na układ nie działa zewnętrzny moment siły, jego moment pędu jest stały. Zmiana rozkładu masy zmienia wtedy prędkość kątową.</p></div>
+      <div class="formula"><span><var class="vL">L</var> = <var class="vI">I</var> <var class="vW">ω</var></span><small>M<sub>wyp</sub> = ΔL/Δt. Gdy M<sub>wyp</sub> = 0, to L = const, czyli I₁ω₁ = I₂ω₂</small></div>
+    </div>
+    <div class="stage"><div class="views"></div><aside class="panel"><div class="controls"></div><div class="readouts"></div></aside></div>
+    <div class="think">
+      <h3>Przewidź, a potem sprawdź</h3>
+      <details><summary>Łyżwiarz przyciąga ręce do ciała. Co dzieje się z ω i z E<sub>k</sub>?</summary><p>Moment bezwładności maleje, więc ω rośnie (L = const). Energia kinetyczna też rośnie, bo E<sub>k</sub> = L²/(2I). Dodatkową energię daje praca mięśni łyżwiarza.</p></details>
+      <details><summary>Moment bezwładności zmalał trzy razy. Ile razy zmieni się prędkość kątowa?</summary><p>Wzrośnie trzy razy, bo ω = L/I.</p></details>
+      <details><summary>Włącz hamulec. Co dzieje się z L i dlaczego platforma zatrzyma się po czasie t = L/M?</summary><p>Z II zasady dynamiki M<sub>wyp</sub> = ΔL/Δt. Hamulec daje stały moment M, więc w każdej sekundzie moment pędu maleje o tę samą wartość: ΔL = M·Δt, czyli L(t) = L₀ − M·t. Platforma stoi, gdy L = 0. Stąd 0 = L₀ − M·t i t = L₀/M. Jednostki zgadzają się: (kg·m²/s) / (N·m) = s. Przesuwanie ciężarków w trakcie hamowania zmienia I i ω, ale nie zmienia L, bo to siły wewnętrzne. Czas zależy tylko od L i M, więc jest ten sam. Zmienia się dopiero wtedy, gdy zmienisz warunki początkowe (ω₀, masy albo początkowe rozstawienie), bo wtedy inne jest L₀ = I·ω₀.</p></details>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+'use strict';
+const TAU = Math.PI * 2, RAD = Math.PI / 180, G = 9.81;
+const FS = '"IBM Plex Sans", system-ui, sans-serif';
+const FM = '"IBM Plex Mono", ui-monospace, monospace';
+const FX = '"STIX Two Text", "Times New Roman", serif';
+const fmt = (x, d = 2) => (Number.isFinite(x) ? x : 0).toLocaleString('pl-PL', { minimumFractionDigits: d, maximumFractionDigits: d });
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+
+/* ---------- kolory z motywu ---------- */
+let C = {};
+function readColors() {
+  const s = getComputedStyle(document.documentElement);
+  const g = n => s.getPropertyValue(n).trim();
+  C = { surface: g('--surface'), sunk: g('--sunk'), ink: g('--ink'), muted: g('--muted'), line: g('--line'), accent: g('--accent'),
+    force: g('--c-force'), torque: g('--c-torque'), inertia: g('--c-inertia'), omega: g('--c-omega'), energy: g('--c-energy'), L: g('--c-L') };
+}
+
+/* ---------- rysowanie ---------- */
+function T(ctx, s, x, y, o = {}) {
+  ctx.save();
+  const f = o.f === 'm' ? FM : o.f === 'x' ? FX : FS;
+  ctx.font = `${o.i ? 'italic ' : ''}${o.w || 500} ${o.size || 20}px ${f}`;
+  ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'alphabetic';
+  ctx.fillText(s, x, y); ctx.restore();
+}
+function line(ctx, x0, y0, x1, y1, color, w = 2, dash = null, alpha = 1) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.globalAlpha = alpha; ctx.lineCap = 'round';
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+function arrow(ctx, x0, y0, x1, y1, color, w = 4, head = 15) {
+  const L = Math.hypot(x1 - x0, y1 - y0); if (L < 2) return;
+  const a = Math.atan2(y1 - y0, x1 - x0), h = Math.min(head, L * 0.7);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - Math.cos(a) * h * 0.7, y1 - Math.sin(a) * h * 0.7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - Math.cos(a - 0.42) * h, y1 - Math.sin(a - 0.42) * h);
+  ctx.lineTo(x1 - Math.cos(a + 0.42) * h, y1 - Math.sin(a + 0.42) * h);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+/* dir = +1: obrót przeciwny do wskazówek zegara, -1: zgodny */
+function spin(ctx, cx, cy, r, dir, span, color, w = 5, start = -2.3) {
+  const end = start - dir * span;
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(cx, cy, r, start, end, dir > 0); ctx.stroke();
+  const ex = cx + r * Math.cos(end), ey = cy + r * Math.sin(end);
+  const tx = dir * Math.sin(end), ty = -dir * Math.cos(end), h = Math.max(12, w * 3);
+  ctx.beginPath(); ctx.moveTo(ex + tx * h, ey + ty * h);
+  ctx.lineTo(ex - ty * h * 0.6, ey + tx * h * 0.6); ctx.lineTo(ex + ty * h * 0.6, ey - tx * h * 0.6);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function dot(ctx, x, y, r, fill, stroke, w = 3) {
+  ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = w; ctx.stroke(); } ctx.restore();
+}
+function yTicks(ymax) { const m = ymax / Math.pow(10, Math.floor(Math.log10(ymax))), n = m === 2 ? 4 : 5; return { n, step: ymax / n }; }
+function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v))); const f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+
+/* ---------- płótna ---------- */
+function makeView(parent, vw, vh, label) {
+  const fig = el('figure', 'view'); const cv = el('canvas'); cv.style.aspectRatio = vw + ' / ' + vh;
+  if (label) fig.appendChild(el('figcaption', 'vlabel', label));
+  fig.appendChild(cv);
+  parent.appendChild(fig);
+  const v = { cv, vw, vh, ctx: cv.getContext('2d') };
+  v.begin = () => {
+    const r = cv.getBoundingClientRect(); if (!r.width) return null;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const w = Math.round(r.width * dpr), h = Math.round(r.width * vh / vw * dpr);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const k = w / vw; v.ctx.setTransform(k, 0, 0, k, 0, 0); v.ctx.clearRect(0, 0, vw, vh); return v.ctx;
+  };
+  return v;
+}
+
+/* ---------- elementy sterowania ---------- */
+function grp(box, text) { box.appendChild(el('div', 'grp', text)); }
+function slider(box, st, mid, o) {
+  const id = mid + '-' + o.key, wrap = el('div', 'ctl');
+  wrap.innerHTML = `<label for="${id}"><span class="sym math" style="color:${o.color || 'var(--ink)'}">${o.sym}</span><span class="nm">${o.label}</span><output for="${id}"></output></label>` +
+    `<input id="${id}" type="range" min="${o.min}" max="${o.max}" step="${o.step}" value="${o.val}">`;
+  box.appendChild(wrap);
+  const inp = wrap.querySelector('input'), out = wrap.querySelector('output');
+  const sync = () => { st[o.key] = +inp.value; out.textContent = fmt(+inp.value, o.dec ?? 1) + (o.unit ? ' ' + o.unit : ''); };
+  inp.addEventListener('input', () => { sync(); if (o.onInput) o.onInput(+inp.value); });
+  sync();
+  return { inp, set(v) { inp.value = v; sync(); }, enable(on) { inp.disabled = !on; wrap.style.opacity = on ? 1 : 0.45; } };
+}
+function button(box, label, cls, fn) { const b = el('button', 'btn ' + (cls || ''), label); b.type = 'button'; b.addEventListener('click', fn); box.appendChild(b); return b; }
+function check(box, id, label, val, fn) {
+  const l = el('label', 'chk'); l.innerHTML = `<input type="checkbox" id="${id}"${val ? ' checked' : ''}><span>${label}</span>`;
+  const i = l.querySelector('input'); i.addEventListener('change', () => fn(i.checked)); box.appendChild(l);
+  return { set(v) { i.checked = v; fn(v); } };
+}
+function readouts(box, items) {
+  const list = el('div', 'ros');
+  items.forEach(it => { const r = el('div', 'ro', `<span class="k">${it.label}</span><span class="v"></span>`); it.node = r.querySelector('.v'); list.appendChild(r); });
+  box.appendChild(list);
+  return () => items.forEach(it => { const s = it.get(); if (it.last !== s) { it.node.textContent = s; it.last = s; } });
+}
+function calcBox(box) { const c = el('div', 'calc'); box.appendChild(c); let last = ''; return s => { if (s !== last) { c.textContent = s; last = s; } }; }
+
+/* =====================================================================
+   1. MOMENT SIŁY
+   ===================================================================== */
+function mSila(root) {
+  const mid = 'moment-sily';
+  const st = { F: 40, r: 1.2, a: 60, two: false, F2: 60, r2: 0.8, comp: true };
+  const ctl = root.querySelector('.controls'), ro = root.querySelector('.readouts');
+  const view = makeView(root.querySelector('.views'), 720, 380, 'Dźwignia, widok z góry');
+
+  grp(ctl, 'Siła F₁');
+  const sF = slider(ctl, st, mid, { key: 'F', label: 'Wartość siły', sym: 'F', color: 'var(--c-force)', min: 10, max: 80, step: 1, val: 40, unit: 'N', dec: 0 });
+  const sR = slider(ctl, st, mid, { key: 'r', label: 'Odległość od osi', sym: 'r', min: 0.2, max: 1.8, step: 0.05, val: 1.2, unit: 'm', dec: 2 });
+  const sA = slider(ctl, st, mid, { key: 'a', label: 'Kąt między r i F', sym: 'α', color: 'var(--c-torque)', min: -180, max: 180, step: 5, val: 60, unit: '°', dec: 0 });
+  const cComp = check(ctl, mid + '-comp', 'Pokaż składowe siły', true, v => { st.comp = v; });
+  grp(ctl, 'Druga siła F₂ (w dół, po lewej stronie osi)');
+  const cTwo = check(ctl, mid + '-two', 'Dodaj drugą siłę', false, v => { st.two = v; sF2.enable(v); sR2.enable(v); });
+  const sF2 = slider(ctl, st, mid, { key: 'F2', label: 'Wartość siły', sym: 'F₂', color: 'var(--c-force)', min: 10, max: 80, step: 1, val: 60, unit: 'N', dec: 0 });
+  const sR2 = slider(ctl, st, mid, { key: 'r2', label: 'Odległość od osi', sym: 'r₂', min: 0.2, max: 1.8, step: 0.05, val: 0.8, unit: 'm', dec: 2 });
+  sF2.enable(false); sR2.enable(false);
+  const row = el('div', 'row'); ctl.appendChild(row);
+  button(row, 'Huśtawka (równowaga)', 'primary', () => {
+    sF.set(40); sR.set(1.2); sA.set(-90); sF2.set(60); sR2.set(0.8); cTwo.set(true);
+  });
+  button(row, 'Reset', '', () => {
+    sF.set(40); sR.set(1.2); sA.set(60); sF2.set(60); sR2.set(0.8); cTwo.set(false);
+  });
+  const setCalc = calcBox(ctl);
+
+  const q = () => {
+    const al = st.a * RAD, t1 = st.r * st.F * Math.sin(al), t2 = st.two ? st.r2 * st.F2 : 0;
+    return { al, t1, t2, net: t1 + t2, fp: st.F * Math.sin(al), fl: st.F * Math.cos(al) };
+  };
+  const verdict = n => Math.abs(n) < 0.05 ? 'brak obrotu (M_wyp = 0)' : n > 0 ? 'przeciwnie do wskazówek zegara ↺' : 'zgodnie ze wskazówkami zegara ↻';
+  const upd = readouts(ro, [
+    { label: 'Składowa prostopadła F⊥ = F·sin α', get: () => fmt(q().fp, 1) + ' N' },
+    { label: 'Moment siły M₁', get: () => fmt(q().t1, 1) + ' N·m' },
+    { label: 'Moment siły M₂', get: () => st.two ? fmt(q().t2, 1) + ' N·m' : '—' },
+    { label: 'Wypadkowy moment M<sub>wyp</sub>', get: () => fmt(q().net, 1) + ' N·m' },
+    { label: 'Skutek', get: () => verdict(q().net) },
+  ]);
+
+  function draw() {
+    const ctx = view.begin(); if (!ctx) return;
+    const O = { x: 360, y: 190 }, S = 170, p = q();
+    const xL = O.x - (st.two ? 1.88 : 0.3) * S, xR = O.x + 1.95 * S;
+    // podpora i dźwignia
+    ctx.fillStyle = C.sunk; ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(O.x, O.y + 8); ctx.lineTo(O.x - 34, O.y + 78); ctx.lineTo(O.x + 34, O.y + 78); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.sunk; ctx.strokeStyle = C.muted; rr(ctx, xL, O.y - 13, xR - xL, 26, 8); ctx.fill(); ctx.stroke();
+    for (let m = 0.5; m <= 1.8; m += 0.5) {
+      T(ctx, fmt(m, 1), O.x + m * S, O.y + 5, { size: 14, color: C.muted, align: 'center', f: 'm' });
+      if (st.two) T(ctx, fmt(m, 1), O.x - m * S, O.y + 5, { size: 14, color: C.muted, align: 'center', f: 'm' });
+    }
+    T(ctx, 'm', xR - 14, O.y + 5, { size: 14, color: C.muted, align: 'center', f: 'm' });
+
+    // siła F1
+    const u = { x: Math.cos(p.al), y: -Math.sin(p.al) }, P = { x: O.x + st.r * S, y: O.y }, len = st.F * 1.6;
+    line(ctx, P.x - u.x * 400, P.y - u.y * 400, P.x + u.x * 400, P.y + u.y * 400, C.force, 2, [9, 7], 0.35);
+    const tip = { x: P.x + u.x * len, y: P.y + u.y * len };
+    if (st.comp && Math.abs(p.al) > 0.02) {
+      line(ctx, tip.x, tip.y, tip.x, P.y, C.muted, 1.5, [4, 4]); line(ctx, tip.x, tip.y, P.x, tip.y, C.muted, 1.5, [4, 4]);
+      arrow(ctx, P.x, P.y, P.x, P.y - len * Math.sin(p.al), C.torque, 3.5, 12);
+      arrow(ctx, P.x, P.y, P.x + len * Math.cos(p.al), P.y, C.muted, 3.5, 12);
+      T(ctx, 'F⊥', P.x - 10, P.y - len * Math.sin(p.al) / 2 + 6, { size: 19, color: C.torque, f: 'x', i: true, align: 'right' });
+    }
+    arrow(ctx, P.x, P.y, tip.x, tip.y, C.force, 5, 18);
+    T(ctx, 'F₁', tip.x + u.x * 28 - 10, tip.y + u.y * 28 + 7, { size: 26, color: C.force, f: 'x', i: true });
+    if (Math.abs(p.al) > 0.05) {
+      ctx.save(); ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(P.x, P.y, 34, 0, -p.al, p.al > 0); ctx.stroke(); ctx.restore();
+      T(ctx, 'α', P.x + 44 * Math.cos(-p.al / 2) - 6, P.y + 44 * Math.sin(-p.al / 2) + 8, { size: 22, f: 'x', i: true });
+    }
+    dot(ctx, P.x, P.y, 6, C.force);
+    // siła F2
+    if (st.two) {
+      const Q = { x: O.x - st.r2 * S, y: O.y }, l2 = st.F2 * 1.6;
+      arrow(ctx, Q.x, Q.y, Q.x, Q.y + l2, C.force, 5, 18); dot(ctx, Q.x, Q.y, 6, C.force);
+      T(ctx, 'F₂', Q.x + 12, Q.y + l2 * 0.55, { size: 26, color: C.force, f: 'x', i: true });
+    }
+    // oś
+    dot(ctx, O.x, O.y, 11, C.ink); dot(ctx, O.x, O.y, 4, C.surface);
+    T(ctx, 'O', O.x - 24, O.y - 14, { size: 22, f: 'x', i: true });
+    // strzałka momentu
+    if (Math.abs(p.net) >= 0.05) {
+      const dir = p.net > 0 ? 1 : -1;
+      spin(ctx, O.x, O.y, 56, dir, 1.5, C.torque, 3 + 6 * Math.min(1, Math.abs(p.net) / 120), dir > 0 ? -0.75 : -2.4);
+    }
+    T(ctx, st.two ? 'M_wyp = ' + fmt(p.net, 1) + ' N·m' : 'M = ' + fmt(p.t1, 1) + ' N·m', O.x, O.y - 84, { size: 21, color: C.torque, align: 'center', f: 'm', w: 600 });
+    if (st.two && Math.abs(p.net) < 0.05) T(ctx, 'równowaga', O.x, O.y - 112, { size: 19, color: C.L, align: 'center', w: 600 });
+
+    let s1 = `F⊥ = F·sin α = ${fmt(st.F, 0)} N · sin ${fmt(st.a, 0)}° = ${fmt(p.fp, 1)} N\nM₁ = r·F⊥ = ${fmt(st.r, 2)} m · ${fmt(p.fp, 1)} N = ${fmt(p.t1, 1)} N·m`;
+    if (st.two) s1 += `\nM₂ = r₂·F₂ = ${fmt(st.r2, 2)} m · ${fmt(st.F2, 0)} N = ${fmt(p.t2, 1)} N·m`;
+    setCalc(s1);
+  }
+  return { tick: () => { draw(); upd(); } };
+}
+
+/* =====================================================================
+   2. MOMENT BEZWŁADNOŚCI
+   ===================================================================== */
+function mBezwl(root) {
+  const mid = 'moment-bezwladnosci';
+  const SH = [{ n: 'Obręcz', k: 1, ks: '1' }, { n: 'Tarcza (walec)', k: 1 / 2, ks: '1/2' }, { n: 'Kula pełna', k: 2 / 5, ks: '2/5' }, { n: 'Pręt (L = 2R)', k: 1 / 3, ks: '1/3' }];
+  const st = { m: 2, R: 0.8, d: 0, sel: 1 };
+  const ctl = root.querySelector('.controls'), ro = root.querySelector('.readouts'), vb = root.querySelector('.views');
+  const vA = makeView(vb, 720, 390, 'Kształt i oś obrotu (oś prostopadła do ekranu)');
+  const vB = makeView(vb, 720, 300, 'Porównanie: ta sama masa i promień');
+
+  grp(ctl, 'Kształt bryły');
+  const seg = el('div', 'seg'); ctl.appendChild(seg);
+  const btns = SH.map((s, i) => button(seg, s.n, '', () => { st.sel = i; btns.forEach((b, j) => b.setAttribute('aria-pressed', j === i)); }));
+  btns.forEach((b, j) => b.setAttribute('aria-pressed', j === st.sel));
+  grp(ctl, 'Parametry');
+  slider(ctl, st, mid, { key: 'm', label: 'Masa', sym: 'm', min: 0.5, max: 10, step: 0.5, val: 2, unit: 'kg', dec: 1 });
+  slider(ctl, st, mid, { key: 'R', label: 'Promień (dla pręta: połowa długości)', sym: 'R', min: 0.2, max: 1.5, step: 0.05, val: 0.8, unit: 'm', dec: 2 });
+  slider(ctl, st, mid, { key: 'd', label: 'Oś przesunięta od środka masy', sym: 'd', color: 'var(--c-torque)', min: 0, max: 1.5, step: 0.05, val: 0, unit: 'm', dec: 2 });
+  const setCalc = calcBox(ctl);
+
+  const I0 = () => SH[st.sel].k * st.m * st.R * st.R;
+  const Itot = () => I0() + st.m * st.d * st.d;
+  const upd = readouts(ro, [
+    { label: 'Współczynnik k kształtu', get: () => SH[st.sel].ks },
+    { label: 'I przez środek masy, k·m·R²', get: () => fmt(I0(), 3) + ' kg·m²' },
+    { label: 'Dodatek Steinera m·d²', get: () => fmt(st.m * st.d * st.d, 3) + ' kg·m²' },
+    { label: 'Moment bezwładności I', get: () => fmt(Itot(), 3) + ' kg·m²' },
+    { label: 'I w stosunku do obręczy (d = 0)', get: () => fmt(Itot() / (st.m * st.R * st.R), 2) + ' ×' },
+  ]);
+
+  function drawShape() {
+    const ctx = vA.begin(); if (!ctx) return;
+    const S = 100, cx = 330, cy = 165, R = st.R * S, ax = cx + st.d * S, k = st.sel;
+    ctx.save();
+    if (k === 0) { const lw = Math.max(8, R * 0.12); ctx.strokeStyle = C.inertia; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(cx, cy, R - lw / 2, 0, TAU); ctx.stroke(); }
+    if (k === 1) { ctx.fillStyle = C.inertia; ctx.globalAlpha = 0.28; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = C.inertia; ctx.lineWidth = 3; ctx.stroke(); }
+    if (k === 2) {
+      ctx.fillStyle = C.inertia; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+      const g = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.35, R * 0.05, cx, cy, R);
+      g.addColorStop(0, 'rgba(255,255,255,0.6)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+    }
+    if (k === 3) { ctx.fillStyle = C.inertia; ctx.globalAlpha = 0.5; rr(ctx, cx - R, cy - 10, 2 * R, 20, 6); ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = C.inertia; ctx.lineWidth = 3; ctx.stroke(); }
+    ctx.restore();
+    // środek masy i oś
+    line(ctx, cx - 9, cy, cx + 9, cy, C.muted, 2); line(ctx, cx, cy - 9, cx, cy + 9, C.muted, 2);
+    if (st.d > 0.001) {
+      line(ctx, cx, cy, ax, cy, C.torque, 3);
+      T(ctx, 'd = ' + fmt(st.d, 2) + ' m', (cx + ax) / 2, cy - (k === 3 ? 26 : 14), { size: 20, color: C.torque, align: 'center', f: 'm', w: 600 });
+      T(ctx, 'środek masy', cx, cy + (k === 3 ? 38 : 30), { size: 15, color: C.muted, align: 'center' });
+    }
+    dot(ctx, ax, cy, 10, C.surface, C.ink, 3); dot(ctx, ax, cy, 3.5, C.ink);
+    T(ctx, st.d > 0.001 ? 'oś obrotu' : 'oś obrotu = środek masy', ax, cy + (k === 3 ? 64 : R + 34), { size: 17, align: 'center', w: 600 });
+    T(ctx, `${SH[k].n}: I = ${fmt(Itot(), 3)} kg·m²`, 360, 372, { size: 20, align: 'center', f: 'm', w: 600, color: C.inertia });
+    setCalc(`I = k·m·R² + m·d²\n  = ${SH[k].ks}·${fmt(st.m, 1)}·${fmt(st.R, 2)}² + ${fmt(st.m, 1)}·${fmt(st.d, 2)}²\n  = ${fmt(Itot(), 3)} kg·m²`);
+  }
+
+  function drawBars() {
+    const ctx = vB.begin(); if (!ctx) return;
+    const rows = SH.map((s, i) => ({ n: s.n, v: s.k * st.m * st.R * st.R, sel: i === st.sel }));
+    rows.push({ n: 'Wybrany + m·d²', v: Itot(), steiner: true });
+    const vmax = Math.max(...rows.map(r => r.v)), x0 = 250, wmax = 330, h = 34, gap = 14, y0 = 44;
+    rows.forEach((r, i) => {
+      const y = y0 + i * (h + gap), w = Math.max(3, r.v / vmax * wmax);
+      T(ctx, r.n, x0 - 14, y + h / 2 + 6, { size: 18, align: 'right', color: r.sel || r.steiner ? C.ink : C.muted, w: r.sel || r.steiner ? 600 : 500 });
+      ctx.save(); ctx.fillStyle = r.steiner ? C.torque : r.sel ? C.inertia : C.sunk; ctx.strokeStyle = C.line; ctx.lineWidth = 1.5;
+      rr(ctx, x0, y, w, h, 5); ctx.fill(); if (!r.sel && !r.steiner) ctx.stroke(); ctx.restore();
+      T(ctx, fmt(r.v, r.v < 10 ? 3 : 2), x0 + w + 10, y + h / 2 + 6, { size: 18, f: 'm', w: 600 });
+    });
+    T(ctx, 'I [kg·m²]', x0, 292, { size: 16, color: C.muted, f: 'm' });
+  }
+  return { tick: () => { drawShape(); drawBars(); upd(); } };
+}
+
+/* =====================================================================
+   3. II ZASADA DYNAMIKI RUCHU OBROTOWEGO
+   ===================================================================== */
+function mDruga(root) {
+  const mid = 'druga-zasada', TMAX = 8;
+  const st = { tau: 6, I: 2, tf: 0 };
+  const sim = { t: 0, w: 0, phi: 0, on: true, paused: false, hist: [[0, 0]], lastPush: 0 };
+  const ctl = root.querySelector('.controls'), ro = root.querySelector('.readouts'), vb = root.querySelector('.views');
+  const vA = makeView(vb, 720, 360, 'Tarcza z napędem');
+  const vB = makeView(vb, 720, 300, 'Wykres prędkości kątowej');
+
+  grp(ctl, 'Parametry');
+  slider(ctl, st, mid, { key: 'tau', label: 'Moment napędowy', sym: 'M', color: 'var(--c-torque)', min: 0.5, max: 10, step: 0.5, val: 6, unit: 'N·m', dec: 1 });
+  slider(ctl, st, mid, { key: 'I', label: 'Moment bezwładności', sym: 'I', color: 'var(--c-inertia)', min: 1, max: 10, step: 0.5, val: 2, unit: 'kg·m²', dec: 1 });
+  slider(ctl, st, mid, { key: 'tf', label: 'Moment tarcia', sym: 'M<sub>t</sub>', min: 0, max: 8, step: 0.5, val: 0, unit: 'N·m', dec: 1 });
+  grp(ctl, 'Przebieg doświadczenia (8 s)');
+  const row = el('div', 'row'); ctl.appendChild(row);
+  const bOn = button(row, 'Napęd włączony', '', () => { sim.on = !sim.on; bOn.textContent = sim.on ? 'Napęd włączony' : 'Napęd wyłączony'; bOn.setAttribute('aria-pressed', sim.on); });
+  bOn.setAttribute('aria-pressed', true);
+  const bP = button(row, 'Pauza', '', () => { sim.paused = !sim.paused; bP.textContent = sim.paused ? 'Wznów' : 'Pauza'; });
+  button(row, 'Od nowa', 'primary', reset);
+  const setCalc = calcBox(ctl);
+
+  function reset() { sim.t = 0; sim.w = 0; sim.phi = 0; sim.hist = [[0, 0]]; sim.lastPush = 0; sim.paused = false; bP.textContent = 'Pauza'; }
+  const drive = () => (sim.on ? st.tau : 0);
+  const netT = () => (sim.w > 1e-9 ? drive() - st.tf : Math.max(0, drive() - st.tf));
+  const eps = () => netT() / st.I;
+
+  function step(dt) {
+    if (sim.paused || sim.t >= TMAX) return;
+    const n = Math.max(1, Math.ceil(dt / 0.005)), h = dt / n;
+    for (let i = 0; i < n && sim.t < TMAX; i++) {
+      const w2 = Math.max(0, sim.w + netT() / st.I * h);
+      sim.phi += (sim.w + w2) / 2 * h; sim.w = w2; sim.t += h;
+    }
+    if (sim.t - sim.lastPush > 0.02 || sim.t >= TMAX) { sim.hist.push([sim.t, sim.w]); sim.lastPush = sim.t; }
+  }
+
+  const upd = readouts(ro, [
+    { label: 'Wypadkowy moment M<sub>wyp</sub>', get: () => fmt(netT(), 1) + ' N·m' },
+    { label: 'Przyspieszenie kątowe ε = M<sub>wyp</sub> / I', get: () => fmt(eps(), 2) + ' rad/s²' },
+    { label: 'Prędkość kątowa ω', get: () => fmt(sim.w, 1) + ' rad/s' },
+    { label: 'Obroty na sekundę', get: () => fmt(sim.w / TAU, 2) + ' 1/s' },
+    { label: 'Kąt obrotu φ', get: () => fmt(sim.phi, 1) + ' rad (' + fmt(sim.phi / TAU, 1) + ' obr.)' },
+  ]);
+
+  function drawDisc() {
+    const ctx = vA.begin(); if (!ctx) return;
+    const cx = 215, cy = 185, R = 112;
+    ctx.save(); ctx.fillStyle = C.inertia; ctx.globalAlpha = 0.22; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.strokeStyle = C.inertia; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke(); ctx.restore();
+    const a = -sim.phi;
+    line(ctx, cx - Math.cos(a) * R, cy - Math.sin(a) * R, cx + Math.cos(a) * R, cy + Math.sin(a) * R, C.inertia, 3, null, 0.7);
+    line(ctx, cx - Math.cos(a + Math.PI / 2) * R, cy - Math.sin(a + Math.PI / 2) * R, cx + Math.cos(a + Math.PI / 2) * R, cy + Math.sin(a + Math.PI / 2) * R, C.inertia, 2, null, 0.35);
+    dot(ctx, cx + Math.cos(a) * (R - 16), cy + Math.sin(a) * (R - 16), 10, C.energy);
+    dot(ctx, cx, cy, 9, C.ink);
+    // dodatni obrót to obrót przeciwny do wskazówek zegara, a kąt na ekranie rośnie zgodnie z nimi, więc rysujemy z minusem
+    if (drive() > 0) spin(ctx, cx, cy, R + 34, 1, 1.5, C.torque, 2.5 + drive() * 0.6, -0.7);
+    if (st.tf > 0) spin(ctx, cx, cy, R + 34, -1, 1.2, C.muted, 2.5 + st.tf * 0.6, 1.0);
+    T(ctx, drive() > 0 ? 'M' : '', cx, cy - R - 52, { size: 26, color: C.torque, align: 'center', f: 'x', i: true });
+    if (st.tf > 0) T(ctx, 'Mₜ', cx, cy + R + 62, { size: 24, color: C.muted, align: 'center', f: 'x', i: true });
+    const x = 440, big = { size: 26, f: 'm', w: 600 };
+    T(ctx, 't = ' + fmt(sim.t, 2) + ' s', x, 74, big);
+    T(ctx, 'ω = ' + fmt(sim.w, 1) + ' rad/s', x, 122, { ...big, color: C.omega });
+    T(ctx, 'ε = ' + fmt(eps(), 2) + ' rad/s²', x, 170, { ...big, color: C.omega });
+    T(ctx, 'φ = ' + fmt(sim.phi / TAU, 1) + ' obr.', x, 218, big);
+    T(ctx, sim.on ? 'napęd włączony' : 'napęd wyłączony', x, 262, { size: 19, color: sim.on ? C.torque : C.muted, w: 600 });
+    if (sim.t >= TMAX) T(ctx, 'Koniec doświadczenia. Kliknij „Od nowa”.', x, 300, { size: 17, color: C.muted });
+    T(ctx, 'Żółta kropka to znacznik na tarczy.', x, 330, { size: 15, color: C.muted });
+    T(ctx, 'Dzięki niemu widać obrót.', x, 350, { size: 15, color: C.muted });
+    setCalc(`ε = M_wyp / I\n  = (${fmt(drive(), 1)} − ${fmt(st.tf, 1)}) N·m / ${fmt(st.I, 1)} kg·m²\n  = ${fmt(eps(), 2)} rad/s²`);
+  }
+
+  function drawGraph() {
+    const ctx = vB.begin(); if (!ctx) return;
+    const x0 = 78, x1 = 690, y0 = 34, y1 = 244;
+    let wm = 1; sim.hist.forEach(p => { if (p[1] > wm) wm = p[1]; });
+    const ymax = niceMax(Math.max(wm, Math.abs(st.tau - st.tf) / st.I * TMAX * 0.5, 1) * 1.1);
+    const yt = yTicks(ymax);
+    for (let i = 0; i <= yt.n; i++) {
+      const y = y1 - (y1 - y0) * i / yt.n; line(ctx, x0, y, x1, y, C.line, 1.2);
+      T(ctx, fmt(yt.step * i, yt.step < 1 ? 1 : 0), x0 - 10, y + 6, { size: 16, color: C.muted, align: 'right', f: 'm' });
+    }
+    for (let s = 0; s <= TMAX; s += 1) {
+      const x = x0 + (x1 - x0) * s / TMAX; line(ctx, x, y1, x, y1 + 6, C.muted, 1.5);
+      if (s % 2 === 0) T(ctx, String(s), x, y1 + 26, { size: 16, color: C.muted, align: 'center', f: 'm' });
+    }
+    T(ctx, 'ω [rad/s]', x0, 20, { size: 16, color: C.omega, f: 'm', w: 600 }); T(ctx, 't [s]', x1, y1 + 46, { size: 16, color: C.muted, align: 'right', f: 'm' });
+    line(ctx, x0, y1, x1, y1, C.muted, 2); line(ctx, x0, y0, x0, y1, C.muted, 2);
+    const px = p => x0 + (x1 - x0) * p[0] / TMAX, py = p => y1 - (y1 - y0) * Math.min(1, p[1] / ymax);
+    ctx.save(); ctx.beginPath(); ctx.moveTo(px(sim.hist[0]), y1);
+    sim.hist.forEach(p => ctx.lineTo(px(p), py(p))); const last = sim.hist[sim.hist.length - 1]; ctx.lineTo(px(last), y1); ctx.closePath();
+    ctx.fillStyle = C.omega; ctx.globalAlpha = 0.14; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.strokeStyle = C.omega; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.beginPath();
+    sim.hist.forEach((p, i) => (i ? ctx.lineTo(px(p), py(p)) : ctx.moveTo(px(p), py(p)))); ctx.stroke(); ctx.restore();
+    dot(ctx, px(last), py(last), 6, C.omega);
+    T(ctx, 'nachylenie wykresu = ε = ' + fmt(eps(), 2) + ' rad/s²', x1, 22, { size: 17, color: C.ink, align: 'right', w: 600 });
+  }
+  return { tick: dt => { step(dt); drawDisc(); drawGraph(); upd(); } };
+}
+
+/* =====================================================================
+   4. ENERGIA KINETYCZNA
+   ===================================================================== */
+function mEnergia(root) {
+  const mid = 'energia-kinetyczna', LR = 4;
+  const st = { w: 12, I: 3, tau: 4, th: 20, m: 2, slow: 2 };
+  const BODIES = [{ n: 'Obręcz', k: 1, ks: '1' }, { n: 'Walec (tarcza)', k: 1 / 2, ks: '1/2' }, { n: 'Kula pełna', k: 2 / 5, ks: '2/5' }, { n: 'Klocek bez tarcia', k: 0, ks: '0' }];
+  const race = { t: 0, run: false, fin: [null, null, null, null] };
+  let phi = 0;
+  const ctl = root.querySelector('.controls'), ro = root.querySelector('.readouts'), vb = root.querySelector('.views'), tbl = root.querySelector('#race-table');
+  const vA = makeView(vb, 720, 270, 'Koło zamachowe');
+  const vB = makeView(vb, 720, 390, 'Wyścig na równi (toczenie bez poślizgu)');
+
+  grp(ctl, 'Koło zamachowe');
+  slider(ctl, st, mid, { key: 'w', label: 'Prędkość kątowa', sym: 'ω', color: 'var(--c-omega)', min: 0, max: 30, step: 1, val: 12, unit: 'rad/s', dec: 0 });
+  slider(ctl, st, mid, { key: 'I', label: 'Moment bezwładności', sym: 'I', color: 'var(--c-inertia)', min: 0.5, max: 10, step: 0.5, val: 3, unit: 'kg·m²', dec: 1 });
+  slider(ctl, st, mid, { key: 'tau', label: 'Stały moment rozpędzający', sym: 'M', color: 'var(--c-torque)', min: 1, max: 10, step: 0.5, val: 4, unit: 'N·m', dec: 1 });
+  grp(ctl, 'Wyścig na równi');
+  slider(ctl, st, mid, { key: 'th', label: 'Kąt nachylenia', sym: 'θ', min: 5, max: 45, step: 1, val: 20, unit: '°', dec: 0, onInput: resetRace });
+  slider(ctl, st, mid, { key: 'm', label: 'Masa ciała', sym: 'm', min: 1, max: 10, step: 0.5, val: 2, unit: 'kg', dec: 1 });
+  slider(ctl, st, mid, { key: 'slow', label: 'Spowolnienie', sym: '×', min: 1, max: 4, step: 0.5, val: 2, unit: '', dec: 1 });
+  const row = el('div', 'row'); ctl.appendChild(row);
+  button(row, 'Start wyścigu', 'primary', () => { resetRace(); race.run = true; });
+  button(row, 'Od nowa', '', resetRace);
+
+  function resetRace() { race.t = 0; race.run = false; race.fin = [null, null, null, null]; }
+  const acc = k => G * Math.sin(st.th * RAD) / (1 + k);
+  const tFin = k => Math.sqrt(2 * LR / acc(k));
+  const h = () => LR * Math.sin(st.th * RAD), Ep = () => st.m * G * h();
+  const Ek = w => 0.5 * st.I * w * w;
+
+  const upd = readouts(ro, [
+    { label: 'Energia kinetyczna koła ½Iω²', get: () => fmt(Ek(st.w), 1) + ' J' },
+    { label: 'Po podwojeniu ω', get: () => fmt(Ek(2 * st.w), 1) + ' J (4 ×)' },
+    { label: 'Praca potrzebna do rozpędzenia, W = ΔE_k', get: () => fmt(Ek(st.w), 1) + ' J' },
+    { label: 'Potrzebny kąt φ = W / M', get: () => fmt(Ek(st.w) / st.tau, 1) + ' rad (' + fmt(Ek(st.w) / st.tau / TAU, 2) + ' obr.)' },
+    { label: 'Wysokość równi h = L sin θ', get: () => fmt(h(), 2) + ' m' },
+    { label: 'Energia potencjalna mgh', get: () => fmt(Ep(), 1) + ' J' },
+  ]);
+
+  let tsig = '';
+  function table() {
+    const sig = [st.th, st.m].join('|'); if (sig === tsig) return; tsig = sig;
+    const rows = BODIES.map(b => {
+      const tr = Ep() / (1 + b.k), rot = Ep() - tr, v = acc(b.k) * tFin(b.k);
+      return `<tr><td>${b.n}</td><td>${b.ks}</td><td>${fmt(acc(b.k), 2)}</td><td>${fmt(tFin(b.k), 2)}</td><td>${fmt(v, 2)}</td><td>${fmt(tr, 1)}</td><td>${fmt(rot, 1)}` +
+        `<span class="split"><i style="width:${100 / (1 + b.k)}%;background:var(--c-omega)"></i><i style="width:${100 * b.k / (1 + b.k)}%;background:var(--c-energy)"></i></span></td></tr>`;
+    }).join('');
+    tbl.innerHTML = `<table><thead><tr><th>Ciało</th><th>k</th><th>a [m/s²]</th><th>t [s]</th><th>v [m/s]</th><th>E postępowa [J]</th><th>E obrotowa [J]</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function drawWheel(dt) {
+    phi -= st.w * dt;
+    const ctx = vA.begin(); if (!ctx) return;
+    const cx = 150, cy = 135, R = 98;
+    ctx.save(); ctx.strokeStyle = C.inertia; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(cx, cy, R - 7, 0, TAU); ctx.stroke(); ctx.restore();
+    for (let i = 0; i < 3; i++) { const a = phi + i * TAU / 3; line(ctx, cx, cy, cx + Math.cos(a) * (R - 12), cy + Math.sin(a) * (R - 12), C.inertia, 3, null, 0.55); }
+    dot(ctx, cx + Math.cos(phi) * (R - 7), cy + Math.sin(phi) * (R - 7), 9, C.energy); dot(ctx, cx, cy, 8, C.ink);
+    const e = Ek(st.w), vals = [{ n: 'ω / 2', v: Ek(st.w / 2) }, { n: 'ω', v: e }, { n: '2ω', v: Ek(2 * st.w) }];
+    const vmax = Math.max(vals[2].v, 1e-9), bx = 345, bw = 235;
+    T(ctx, 'Energia E_k przy różnych ω', bx, 48, { size: 17, color: C.muted, w: 600 });
+    vals.forEach((o, i) => {
+      const y = 70 + i * 56, w = Math.max(2, o.v / vmax * bw);
+      T(ctx, o.n, bx - 12, y + 25, { size: 22, align: 'right', f: 'x', i: true, color: C.omega });
+      ctx.save(); ctx.fillStyle = i === 1 ? C.energy : C.omega; ctx.globalAlpha = i === 1 ? 1 : 0.4; rr(ctx, bx, y, w, 36, 5); ctx.fill(); ctx.restore();
+      T(ctx, fmt(o.v, 1) + ' J', bx + w + 10, y + 25, { size: 19, f: 'm', w: 600 });
+    });
+  }
+
+  function drawRace(dt) {
+    if (race.run) {
+      race.t += dt / st.slow;
+      BODIES.forEach((b, i) => { if (race.fin[i] == null && race.t >= tFin(b.k)) race.fin[i] = tFin(b.k); });
+      if (race.fin.every(x => x != null)) race.run = false;
+    }
+    const ctx = vB.begin(); if (!ctx) return;
+    const th = st.th * RAD, ax = 36, ay = 92 - Math.sin(th) * 110, bx = ax + Math.cos(th) * 110, by = 92;
+    ctx.save(); ctx.fillStyle = C.sunk; ctx.strokeStyle = C.muted; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(ax, by); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(bx, by, 34, Math.PI, Math.PI + th); ctx.stroke(); ctx.restore();
+    T(ctx, 'θ', bx - 52, by - 6, { size: 20, f: 'x', i: true }); T(ctx, 'h', ax - 12, (ay + by) / 2 + 6, { size: 20, f: 'x', i: true, align: 'right' });
+    T(ctx, `θ = ${fmt(st.th, 0)}°, L = ${LR} m, h = ${fmt(h(), 2)} m`, 200, 52, { size: 19, f: 'm', w: 600 });
+    T(ctx, 'Czas symulacji: ' + fmt(race.t, 2) + ' s' + (st.slow > 1 ? ` (spowolnienie ×${fmt(st.slow, 1)})` : ''), 200, 82, { size: 17, color: C.muted, f: 'm' });
+    const r = 24, xs = 190, xe = 676, lh = 66, y0 = 118;
+    BODIES.forEach((b, i) => {
+      const cy = y0 + i * lh + 30, fin = race.fin[i], s = fin != null ? LR : Math.min(LR, 0.5 * acc(b.k) * race.t * race.t), fr = s / LR;
+      const x = xs + fr * (xe - xs), rot = fr * (xe - xs) / r;
+      line(ctx, 14, cy + r + 5, 700, cy + r + 5, C.line, 2);
+      T(ctx, b.n, 14, cy - 2, { size: 17, w: 600 });
+      T(ctx, fin != null ? 't = ' + fmt(fin, 2) + ' s' : (race.run || race.t > 0 ? '…' : 'k = ' + b.ks), 14, cy + 20, { size: 16, color: fin != null ? C.L : C.muted, f: 'm', w: 600 });
+      ctx.save(); ctx.strokeStyle = C.inertia; ctx.fillStyle = C.inertia; ctx.lineWidth = 3;
+      if (i === 0) { ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x, cy, r - 3, 0, TAU); ctx.stroke(); }
+      if (i === 1) { ctx.globalAlpha = 0.3; ctx.beginPath(); ctx.arc(x, cy, r, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(x, cy, r, 0, TAU); ctx.stroke(); }
+      if (i === 2) { ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(x, cy, r, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
+      if (i === 3) { ctx.globalAlpha = 0.5; rr(ctx, x - r, cy - r, 2 * r, 2 * r, 4); ctx.fill(); ctx.globalAlpha = 1; rr(ctx, x - r, cy - r, 2 * r, 2 * r, 4); ctx.stroke(); }
+      ctx.restore();
+      if (i < 3) { line(ctx, x, cy, x + Math.cos(rot) * (r - 3), cy + Math.sin(rot) * (r - 3), C.ink, 3); dot(ctx, x + Math.cos(rot) * (r - 6), cy + Math.sin(rot) * (r - 6), 4, C.energy); }
+    });
+    line(ctx, xe + r, y0 - 6, xe + r, y0 + 4 * lh - 6, C.ink, 2, [6, 6], 0.6);
+    T(ctx, 'meta', xe + r - 4, 112, { size: 15, color: C.muted, align: 'right' });
+  }
+  return { tick: dt => { table(); drawWheel(dt); drawRace(dt); upd(); } };
+}
+
+/* =====================================================================
+   5. MOMENT PĘDU I ZASADA JEGO ZACHOWANIA
+   ===================================================================== */
+function mPedu(root) {
+  const mid = 'moment-pedu', WIN = 14, PX = 140;
+  const st = { r: 1.2, m: 3, I0: 2, w0: 4, tb: 2 };
+  const sim = { r: 1.2, L: 0, w: 0, phi: 0, t: 0, brake: false, hist: [], lastPush: -1, L0: 1, w0: 1, E0: 1 };
+  const ctl = root.querySelector('.controls'), ro = root.querySelector('.readouts'), vb = root.querySelector('.views');
+  const vA = makeView(vb, 720, 420, 'Platforma obrotowa, widok z góry');
+  const vB = makeView(vb, 720, 300, 'Wielkości względne (wartość na starcie = 1)');
+
+  const I = () => st.I0 + 2 * st.m * sim.r * sim.r;
+  const Ek = () => sim.L * sim.L / (2 * I());
+
+  function reset() {
+    sim.r = st.r; sim.t = 0; sim.phi = 0; sim.hist = []; sim.lastPush = -1;
+    sim.L = I() * st.w0; sim.w = st.w0; sim.L0 = sim.L; sim.w0 = sim.w; sim.E0 = Ek();
+  }
+
+  grp(ctl, 'Doświadczenie');
+  const sR = slider(ctl, st, mid, { key: 'r', label: 'Odległość ciężarków od osi', sym: 'r', min: 0.25, max: 1.2, step: 0.05, val: 1.2, unit: 'm', dec: 2 });
+  const row = el('div', 'row'); ctl.appendChild(row);
+  button(row, 'Przyciągnij ręce', 'primary', () => sR.set(0.3));
+  button(row, 'Rozłóż ręce', '', () => sR.set(1.2));
+  const bB = button(row, 'Hamulec', '', () => { sim.brake = !sim.brake; bB.setAttribute('aria-pressed', sim.brake); bB.textContent = sim.brake ? 'Hamulec włączony' : 'Hamulec'; });
+  bB.setAttribute('aria-pressed', false);
+  slider(ctl, st, mid, { key: 'tb', label: 'Moment hamujący', sym: 'M', color: 'var(--c-torque)', min: 0.5, max: 5, step: 0.5, val: 2, unit: 'N·m', dec: 1 });
+  grp(ctl, 'Warunki początkowe (zaczynają od nowa)');
+  slider(ctl, st, mid, { key: 'w0', label: 'Prędkość kątowa na starcie', sym: 'ω₀', color: 'var(--c-omega)', min: 1, max: 8, step: 0.5, val: 4, unit: 'rad/s', dec: 1, onInput: reset });
+  slider(ctl, st, mid, { key: 'm', label: 'Masa każdego ciężarka', sym: 'm', min: 1, max: 5, step: 0.5, val: 3, unit: 'kg', dec: 1, onInput: reset });
+  slider(ctl, st, mid, { key: 'I0', label: 'Moment bezwładności reszty układu', sym: 'I₀', color: 'var(--c-inertia)', min: 1, max: 5, step: 0.5, val: 2, unit: 'kg·m²', dec: 1, onInput: reset });
+  button(ctl, 'Od nowa', '', reset);
+  const setCalc = calcBox(ctl);
+  reset();
+
+  function step(dt) {
+    sim.r += clamp(st.r - sim.r, -0.9 * dt, 0.9 * dt);
+    if (sim.brake && sim.L > 0) sim.L = Math.max(0, sim.L - st.tb * dt);
+    sim.w = sim.L / I(); sim.phi += sim.w * dt; sim.t += dt;
+    if (sim.t - sim.lastPush >= 0.05) {
+      sim.hist.push([sim.t, sim.L / sim.L0, sim.w / sim.w0, Ek() / sim.E0]); sim.lastPush = sim.t;
+      while (sim.hist.length > 2 && sim.t - sim.hist[0][0] > WIN + 1) sim.hist.shift();
+    }
+  }
+
+  const upd = readouts(ro, [
+    { label: 'Moment pędu L = I·ω', get: () => fmt(sim.L, 1) + ' kg·m²/s' },
+    { label: 'Moment bezwładności I = I₀ + 2mr²', get: () => fmt(I(), 2) + ' kg·m²' },
+    { label: 'Prędkość kątowa ω = L / I', get: () => fmt(sim.w, 2) + ' rad/s' },
+    { label: 'Energia kinetyczna E_k = L² / 2I', get: () => fmt(Ek(), 1) + ' J' },
+    { label: 'Zmiana E_k od początku', get: () => (Ek() - sim.E0 >= 0 ? '+' : '') + fmt(Ek() - sim.E0, 1) + ' J' },
+    { label: 'Zewnętrzny moment M<sub>wyp</sub>', get: () => (sim.brake && sim.L > 0 ? '−' + fmt(st.tb, 1) + ' N·m' : '0 N·m') },
+  ]);
+
+  function drawPlatform() {
+    const ctx = vA.begin(); if (!ctx) return;
+    const cx = 360, cy = 212, R = 188, a = -sim.phi;
+    ctx.save(); ctx.fillStyle = C.sunk; ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+    [0.5, 1.0].forEach(m => { ctx.save(); ctx.strokeStyle = C.muted; ctx.globalAlpha = 0.5; ctx.setLineDash([5, 6]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, m * PX, 0, TAU); ctx.stroke(); ctx.restore(); T(ctx, fmt(m, 1) + ' m', cx + 6, cy - m * PX - 5, { size: 14, color: C.muted, f: 'm' }); });
+    const rp = sim.r * PX, mr = 11 + st.m * 3.4;
+    [0, Math.PI].forEach(o => {
+      const mx = cx + Math.cos(a + o) * rp, my = cy + Math.sin(a + o) * rp;
+      line(ctx, cx, cy, mx, my, C.ink, 5, null, 0.55);
+      dot(ctx, mx, my, mr, C.energy, C.ink, 2.5);
+    });
+    dot(ctx, cx, cy, 27, C.inertia, C.ink, 2.5);
+    dot(ctx, cx, cy, 5, C.surface);
+    spin(ctx, cx, cy, R + 14, 1, 1.2, C.omega, 3 + Math.min(8, sim.w * 0.4), -1.0);
+    // wektor L skierowany do widza
+    dot(ctx, 662, 380, 17, C.surface, C.L, 3); dot(ctx, 662, 380, 5, C.L);
+    T(ctx, 'L', 692, 387, { size: 26, color: C.L, f: 'x', i: true, w: 600 }); T(ctx, 'do widza', 662, 342, { size: 14, color: C.muted, align: 'center' });
+    const s = { size: 18, f: 'm', w: 600 };
+    T(ctx, 'L = ' + fmt(sim.L, 1) + ' kg·m²/s', 16, 62, { ...s, color: C.L });
+    T(ctx, 'I = ' + fmt(I(), 2) + ' kg·m²', 16, 90, { ...s, color: C.inertia });
+    T(ctx, 'ω = ' + fmt(sim.w, 2) + ' rad/s', 704, 62, { ...s, color: C.omega, align: 'right' });
+    T(ctx, 'E_k = ' + fmt(Ek(), 1) + ' J', 704, 90, { ...s, color: C.energy, align: 'right' });
+    if (sim.brake) T(ctx, sim.L > 0 ? `hamulec: M = ${fmt(st.tb, 1)} N·m` : 'zatrzymano', 16, 404, { size: 18, color: C.torque, f: 'm', w: 600 });
+    setCalc(`I = I₀ + 2·m·r² = ${fmt(st.I0, 1)} + 2·${fmt(st.m, 1)}·${fmt(sim.r, 2)}² = ${fmt(I(), 2)} kg·m²\nL = I·ω = ${fmt(I(), 2)} · ${fmt(sim.w, 2)} = ${fmt(sim.L, 1)} kg·m²/s` +
+      (sim.brake && sim.L > 0 ? `\nczas do zatrzymania t = L/M = ${fmt(sim.L / st.tb, 1)} s` : ''));
+  }
+
+  function drawGraph() {
+    const ctx = vB.begin(); if (!ctx) return;
+    const x0 = 62, x1 = 700, y0 = 50, y1 = 244, h = sim.hist;
+    let mx = 1.5; h.forEach(p => { mx = Math.max(mx, p[1], p[2], p[3]); });
+    const ymax = niceMax(mx * 1.08), tmin = Math.max(0, sim.t - WIN), tmax = Math.max(WIN, sim.t);
+    const px = t => x0 + (x1 - x0) * (t - (tmax - WIN)) / WIN, py = v => y1 - (y1 - y0) * Math.min(1, v / ymax);
+    const yt = yTicks(ymax);
+    for (let i = 0; i <= yt.n; i++) { const y = y1 - (y1 - y0) * i / yt.n; line(ctx, x0, y, x1, y, C.line, 1.2); T(ctx, fmt(yt.step * i, yt.step < 1 ? 1 : 0), x0 - 8, y + 6, { size: 15, color: C.muted, align: 'right', f: 'm' }); }
+    line(ctx, x0, y1, x1, y1, C.muted, 2); line(ctx, x0, y0, x0, y1, C.muted, 2);
+    T(ctx, 't [s]', x1, y1 + 48, { size: 15, color: C.muted, align: 'right', f: 'm' });
+    for (let k = Math.ceil((tmax - WIN) / 2) * 2; k <= tmax; k += 2) { const x = px(k); if (x >= x0) { line(ctx, x, y1, x, y1 + 6, C.muted, 1.5); T(ctx, String(k), x, y1 + 24, { size: 15, color: C.muted, align: 'center', f: 'm' }); } }
+    const series = [[3, C.energy, 3], [2, C.omega, 3], [1, C.L, 4.5]];
+    series.forEach(([idx, col, w]) => {
+      ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.beginPath();
+      h.forEach((p, i) => (i ? ctx.lineTo(px(p[0]), py(p[idx])) : ctx.moveTo(px(p[0]), py(p[idx])))); ctx.stroke(); ctx.restore();
+    });
+    const last = h[h.length - 1] || [0, 1, 1, 1];
+    T(ctx, 'L / L₀ = ' + fmt(last[1], 2), x0, 26, { size: 18, color: C.L, f: 'm', w: 600 });
+    T(ctx, 'ω / ω₀ = ' + fmt(last[2], 2), x0 + 215, 26, { size: 18, color: C.omega, f: 'm', w: 600 });
+    T(ctx, 'E_k / E_k₀ = ' + fmt(last[3], 2), x0 + 435, 26, { size: 18, color: C.energy, f: 'm', w: 600 });
+  }
+  return { tick: dt => { step(dt); drawPlatform(); drawGraph(); upd(); } };
+}
+
+/* =====================================================================
+   Uruchomienie: zakładki, pętla animacji
+   ===================================================================== */
+const factories = { 'moment-sily': mSila, 'moment-bezwladnosci': mBezwl, 'druga-zasada': mDruga, 'energia-kinetyczna': mEnergia, 'moment-pedu': mPedu };
+const mods = {}, ids = Object.keys(factories);
+ids.forEach(id => { mods[id] = factories[id](document.getElementById(id)); });
+const tabs = [...document.querySelectorAll('.tabs [role=tab]')];
+let active = ids[0];
+function show(id, setHash) {
+  if (!mods[id]) id = ids[0];
+  active = id;
+  tabs.forEach(b => { const on = b.dataset.m === id; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+  ids.forEach(k => { document.getElementById(k).hidden = k !== id; });
+  if (setHash) { try { history.replaceState(null, '', '#' + id); } catch (e) { try { location.hash = id; } catch (e2) { /* brak dostępu do adresu */ } } }
+}
+tabs.forEach((b, i) => {
+  b.addEventListener('click', () => show(b.dataset.m, true));
+  b.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); show(n.dataset.m, true); e.preventDefault();
+  });
+});
+show((location.hash || '').slice(1), false);
+window.addEventListener('hashchange', () => show((location.hash || '').slice(1), false));
+
+let prev = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, Math.max(0, (now - prev) / 1000)); prev = now;
+  readColors(); mods[active].tick(dt);
+  requestAnimationFrame(frame);
+}
+readColors();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
